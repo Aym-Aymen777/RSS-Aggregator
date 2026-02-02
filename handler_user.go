@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Aym-Aymen777/RSS-Aggregator/models"
-	"github.com/Aym-Aymen777/RSS-Aggregator/utils"
+	 "github.com/Aym-Aymen777/RSS-Aggregator/utils"
 )
 
 func handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
-	err = insertUser(user)
+	err = utils.InsertUser(user)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to create user")
 		return
@@ -47,7 +47,7 @@ func handlerCreateManyUsers(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	err = insertMany(users)
+	err = utils.InsertMany(users)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Failed to create users")
 		return
@@ -66,7 +66,7 @@ func handlerFindUserByEmail(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "Email query parameter is required")
 		return
 	}
-	results := findByQuery("email", email)
+	results := utils.FindByQuery("email", email)
 	if len(results) == 0 {
 		respondError(w, http.StatusNotFound, "User not found")
 		return
@@ -86,6 +86,6 @@ func handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updateUser(id)
+	utils.UpdateUser(id)
 	respondWithJSON(w, http.StatusOK, "User updated successfully ✅")
 }

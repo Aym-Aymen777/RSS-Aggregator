@@ -8,17 +8,20 @@ import (
 
 	"github.com/Aym-Aymen777/RSS-Aggregator/models"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
+
+var MongoClient *mongo.Client
 
 //insert a user to the collection
 
-func insertUser(user models.User) error {
+func InsertUser(user models.User) error {
 	collection := MongoClient.Database("rssagg").Collection("users")
 	_, err := collection.InsertOne(context.TODO(), user)
 	return err
 }
 
-func insertMany(docs []models.User) error {
+func InsertMany(docs []models.User) error {
 	coll := MongoClient.Database("rssagg").Collection("users")
 	result, err := coll.InsertMany(context.TODO(), docs)
 	if err != nil {
@@ -30,7 +33,7 @@ func insertMany(docs []models.User) error {
 	return err
 }
 
-func findByQuery(query string, value any) []models.User {
+func FindByQuery(query string, value any) []models.User {
 	coll := MongoClient.Database("rssagg").Collection("users")
 	filter := bson.D{{Key: query, Value: value}}
 
@@ -50,7 +53,7 @@ func findByQuery(query string, value any) []models.User {
 	return results
 }
 
-func updateUser(id string) {
+func UpdateUser(id string) {
 	coll := MongoClient.Database("rssagg").Collection("users")
 
 	objectID, err := bson.ObjectIDFromHex(id)
