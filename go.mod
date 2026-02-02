@@ -1,4 +1,4 @@
-module github.com/Aym-Aymen777/rssagg
+module github.com/Aym-Aymen777/RSS-Aggregator
 
 go 1.25.2
 

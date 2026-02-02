@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Aym-Aymen777/rssagg/models"
+	"github.com/Aym-Aymen777/RSS-Aggregator/models"
+	"github.com/Aym-Aymen777/RSS-Aggregator/utils"
 )
 
 func handlerCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	if(user.Name == "" || user.Email == "" || user.Age <= 0) {
+	if user.Name == "" || user.Email == "" || user.Age <= 0 {
 		respondError(w, http.StatusBadRequest, "Missing or invalid user fields")
 		return
 	}
@@ -34,7 +35,7 @@ func handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusCreated, user)
 }
 
-func handlerCreateManyUsers(w http.ResponseWriter, r *http.Request){
+func handlerCreateManyUsers(w http.ResponseWriter, r *http.Request) {
 	//force method post
 	if r.Method != "POST" {
 		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
@@ -54,14 +55,14 @@ func handlerCreateManyUsers(w http.ResponseWriter, r *http.Request){
 	respondWithJSON(w, http.StatusCreated, users)
 }
 
-func handlerFindUserByEmail(w http.ResponseWriter, r *http.Request){
+func handlerFindUserByEmail(w http.ResponseWriter, r *http.Request) {
 	//force method get
-	if r.Method != "GET"{
+	if r.Method != "GET" {
 		respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 	email := r.URL.Query().Get("email")
-	if email == ""{
+	if email == "" {
 		respondError(w, http.StatusBadRequest, "Email query parameter is required")
 		return
 	}
@@ -84,7 +85,7 @@ func handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "ID query parameter is required")
 		return
 	}
-	
+
 	updateUser(id)
 	respondWithJSON(w, http.StatusOK, "User updated successfully ✅")
 }
