@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -44,6 +45,10 @@ func main() {
 	v1.Post("/users/create-many", handlerCreateManyUsers)
 	v1.Get("/users", handlerFindUserByEmail)
 	v1.Put("/users/update",handlerUpdateUser)
+
+	//Auth endpoints
+	authCollection := MongoClient.Database("rssagg").Collection("auths")
+	v1.Post("/auth/register", handlers.HandlerRagisterUser(authCollection))
 
 
 	router.Mount("/v1", v1)

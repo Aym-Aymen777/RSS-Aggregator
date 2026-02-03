@@ -1,4 +1,3 @@
 .vscode/
-rssagg.exe
-RSS-Aggregator.exe
 .env
+*.exe
