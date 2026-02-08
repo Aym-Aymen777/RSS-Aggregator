@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
+	//"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -44,12 +45,11 @@ func main() {
 	v1.Post("/users/create", handlerCreateUser)
 	v1.Post("/users/create-many", handlerCreateManyUsers)
 	v1.Get("/users", handlerFindUserByEmail)
-	v1.Put("/users/update",handlerUpdateUser)
+	v1.Put("/users/update", handlerReadiness)
 
 	//Auth endpoints
-	authCollection := MongoClient.Database("rssagg").Collection("auths")
-	v1.Post("/auth/register", handlers.HandlerRagisterUser(authCollection))
-
+	//authCollection := MongoClient.Database("rssagg").Collection("auths")
+	v1.Post("/auth/register", handlerReadiness)
 
 	router.Mount("/v1", v1)
 
@@ -58,11 +58,34 @@ func main() {
 		Handler: router,
 	}
 
-	// Run server
+	// Log registered routes
+	log.Printf("🗺️  Registered Routes:")
+
+	// First walk the main router
+	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		route = strings.ReplaceAll(route, "/*", "/", )
+		log.Printf("[%s]: %s\n", method, route)
+		return nil
+	}
+	if err := chi.Walk(router, walkFunc); err != nil {
+		log.Printf("Main router logging err: %s\n", err.Error())
+	}
+
+	// Then walk the v1 sub-router with prefix
+	log.Printf("\n📍 V1 Routes:")
+	walkFuncV1 := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		route = strings.ReplaceAll(route, "/*", "/", )
+		log.Printf("[%s]: /v1%s\n", method, route)
+		return nil
+	}
+	if err := chi.Walk(v1, walkFuncV1); err != nil {
+		log.Printf("V1 router logging err: %s\n", err.Error())
+	}
+	// Start server in a goroutine
 	go func() {
-		log.Printf("🚀 Server running on port %s\n", port)
+		log.Printf("🚀 Server starting on port %s\n", port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal(err)
+			log.Fatalf("Server error: %v", err)
 		}
 	}()
 
@@ -76,8 +99,13 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	server.Shutdown(ctx)
-	MongoClient.Disconnect(ctx)
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("Server shutdown error: %v", err)
+	}
+
+	if err := MongoClient.Disconnect(ctx); err != nil {
+		log.Printf("MongoDB disconnect error: %v", err)
+	}
 
 	log.Println("✅ Server stopped cleanly")
 }
