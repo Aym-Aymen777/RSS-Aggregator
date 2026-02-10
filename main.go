@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	//"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
+	"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -45,11 +44,12 @@ func main() {
 	v1.Post("/users/create", handlerCreateUser)
 	v1.Post("/users/create-many", handlerCreateManyUsers)
 	v1.Get("/users", handlerFindUserByEmail)
-	v1.Put("/users/update", handlerReadiness)
+	v1.Put("/users/update", handlerUpdateUser)
 
 	//Auth endpoints
-	//authCollection := MongoClient.Database("rssagg").Collection("auths")
-	v1.Post("/auth/register", handlerReadiness)
+	authCollection := MongoClient.Database("rssagg").Collection("auths")
+	v1.Post("/auth/register", handlers.HandlerRagisterUser(authCollection))
+	v1.Post("/auth/login", handlers.HandlerLoginUser(authCollection))
 
 	router.Mount("/v1", v1)
 
@@ -58,7 +58,7 @@ func main() {
 		Handler: router,
 	}
 
-	// Log registered routes
+	/* // Log registered routes
 	log.Printf("🗺️  Registered Routes:")
 
 	// First walk the main router
@@ -80,7 +80,7 @@ func main() {
 	}
 	if err := chi.Walk(v1, walkFuncV1); err != nil {
 		log.Printf("V1 router logging err: %s\n", err.Error())
-	}
+	} */
 	// Start server in a goroutine
 	go func() {
 		log.Printf("🚀 Server starting on port %s\n", port)

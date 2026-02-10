@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Aym-Aymen777/RSS-Aggregator/services"
+	"github.com/Aym-Aymen777/RSS-Aggregator/utils"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -44,5 +45,38 @@ func HandlerRagisterUser(coll *mongo.Collection) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("User registered successfully"))
 
+	}
+}
+
+func HandlerLoginUser(coll *mongo.Collection) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Ensure the request method is POST
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		// Parse the request body
+		var req struct {
+			Email    string `json:"email"`
+			Password string `json:"password"`
+		}
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		if req.Email == "" || req.Password == "" {
+			http.Error(w, "Email and password are required", http.StatusBadRequest)
+			return
+		}
+		user, err := services.LoginUser(coll, req.Email, req.Password)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusUnauthorized, "Invalid email or password")
+			return
+		}
+		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
+			"message": "Login successful",
+			"user":    user.Username,
+		})
 	}
 }

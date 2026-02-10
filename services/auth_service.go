@@ -27,7 +27,7 @@ func RegisterUser(col *mongo.Collection, username, email, password string) error
 	if err != nil {
 		return err
 	}
-	 newUser := models.Auth{
+	newUser := models.Auth{
 		Username:  username,
 		Email:     email,
 		Password:  hashedPassword,
@@ -36,4 +36,25 @@ func RegisterUser(col *mongo.Collection, username, email, password string) error
 	}
 	_, err = col.InsertOne(ctx, newUser)
 	return err
+}
+
+func LoginUser(col *mongo.Collection, email, password string) (*models.Auth, error) {
+	// find the user by email
+	ctx := context.Background()
+	var user models.Auth
+	log.Println("Trying to find user with email:", email)
+	log.Printf("Auth struct type: %#v\n", models.Auth{})
+
+	err := col.FindOne(ctx, bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		log.Println("User not found :", err)
+		return nil, err
+	}
+	// check if the password is correct
+	valid := utils.CheckPassword(password, user.Password)
+	if valid != nil {
+		log.Println("Invalid password")
+		return nil, valid
+	}
+	return &user, nil
 }

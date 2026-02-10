@@ -1,11 +1,11 @@
-package main
+package utils
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-func respondWithJSON(w http.ResponseWriter, code int, payload any) {
+func RespondWithJSON(w http.ResponseWriter, code int, payload any) {
 	dat, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -17,6 +17,6 @@ func respondWithJSON(w http.ResponseWriter, code int, payload any) {
 	w.Write(dat)
 }
 
-func respondError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
+func RespondWithError(w http.ResponseWriter, code int, message string) {
+	RespondWithJSON(w, code, map[string]string{"error": message})
 } 
