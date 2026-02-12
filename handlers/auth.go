@@ -48,7 +48,7 @@ func HandlerRagisterUser(coll *mongo.Collection) http.HandlerFunc {
 	}
 }
 
-func HandlerLoginUser(coll *mongo.Collection) http.HandlerFunc {
+func HandlerLoginUser(coll *mongo.Collection, tokenService *services.TokenService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Ensure the request method is POST
 		if r.Method != http.MethodPost {
@@ -74,9 +74,19 @@ func HandlerLoginUser(coll *mongo.Collection) http.HandlerFunc {
 			utils.RespondWithError(w, http.StatusUnauthorized, "Invalid email or password")
 			return
 		}
-		utils.RespondWithJSON(w, http.StatusOK, map[string]string{
+		userID := user.ID
+		email := req.Email
+		// Generate Token Pair
+		tokens, err := tokenService.GenerateTokens(userID, email)
+		if err != nil {
+			utils.RespondWithError(w, http.StatusInternalServerError, "Failed to generate tokens")
+			return
+		}
+
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Login successful",
 			"user":    user.Username,
+			"tokens":  tokens,
 		})
 	}
 }

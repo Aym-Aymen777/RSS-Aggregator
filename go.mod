@@ -5,6 +5,7 @@ go 1.25.2
 require (
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/cors v1.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver v1.17.8
 	go.mongodb.org/mongo-driver/v2 v2.5.0
