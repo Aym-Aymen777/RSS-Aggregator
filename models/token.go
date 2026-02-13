@@ -2,17 +2,18 @@ package models
 
 import (
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type AccessTokenClaims struct {
-	UserID primitive.ObjectID `json:"user_id"`
-	Email  string             `json:"email"`
+	UserID bson.ObjectID `json:"_id"`
+	Email  string        `json:"email"`
 	jwt.RegisteredClaims
 }
 
 type RefreshTokenClaims struct {
-	UserID primitive.ObjectID `json:"user_id"`
+	UserID bson.ObjectID `json:"_id"`
+	Email  string        `json:"email"`
 	jwt.RegisteredClaims
 }
 

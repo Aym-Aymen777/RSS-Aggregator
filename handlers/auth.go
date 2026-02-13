@@ -83,9 +83,89 @@ func HandlerLoginUser(coll *mongo.Collection, tokenService *services.TokenServic
 			return
 		}
 
+		// Set access token cookie (short-lived)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "access_token",
+			Value:    tokens.AccessToken,
+			Path:     "/", 
+			MaxAge:   15 * 60,                 // 15 minutes in seconds
+			HttpOnly: true,                    // Prevents JavaScript access (XSS protection)
+			Secure:   false,                   //TODO Only sent over HTTPS (set to false in development)
+			SameSite: http.SameSiteStrictMode, // CSRF protection
+		})
+
+		// Set refresh token cookie (long-lived)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    tokens.RefreshToken,
+			Path:     "/", // Only sent to refresh endpoint
+			MaxAge:   7 * 24 * 60 * 60, // 7 days in seconds
+			HttpOnly: true,
+			Secure:   false, //TODO Set to false in development
+			SameSite: http.SameSiteStrictMode,
+		})
+
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Login successful",
 			"user":    user.Username,
+			"tokens":  tokens,
+		})
+	}
+}
+
+func HandlerRefreshToken(coll *mongo.Collection, tokenService *services.TokenService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Ensure the request method is POST
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		// Get the refresh token from the cookie
+		cookie, err := r.Cookie("refresh_token")
+		if err != nil {
+			http.Error(w, "Refresh token not provided", http.StatusUnauthorized)
+			return
+		}
+		refreshToken := cookie.Value
+		// Validate the refresh token and get the user ID
+		claims, err := tokenService.ValidateRefreshToken(refreshToken)
+		if err != nil {
+			http.Error(w, "Invalid refresh token", http.StatusUnauthorized)
+			return
+		}
+		userID := claims.UserID
+		email := claims.Email
+		// Generate new token pair
+		tokens, err := tokenService.GenerateTokens(userID, email)
+		if err != nil {
+			http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
+			return
+		}
+		// Set new access token cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:  "access_token",
+			Value: tokens.AccessToken,
+
+			Path:     "/",
+			MaxAge:   15 * 60, // 15 minutes in seconds
+			HttpOnly: true,
+			Secure:   false, //TODO Only sent over HTTPS (set to false in development)
+			SameSite: http.SameSiteStrictMode,
+		})
+
+		// Set new refresh token cookie
+		http.SetCookie(w, &http.Cookie{
+			Name:  "refresh_token",
+			Value: tokens.RefreshToken,
+
+			Path:     "/v1/auth/refresh",    // Only sent to refresh endpoint
+			MaxAge:   7 * 24 * 60 * 60, // 7 days in seconds
+			HttpOnly: true,
+			Secure:   false, //TODO Set to false in development
+			SameSite: http.SameSiteStrictMode,
+		})
+		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
+			"message": "Token refreshed successfully",
 			"tokens":  tokens,
 		})
 	}

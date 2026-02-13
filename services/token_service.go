@@ -7,7 +7,7 @@ import (
 	"github.com/Aym-Aymen777/RSS-Aggregator/config"
 	"github.com/Aym-Aymen777/RSS-Aggregator/models"
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type TokenService struct {
@@ -19,7 +19,7 @@ func NewTokenService(config *config.JWTConfig) *TokenService {
 }
 
 // I generate access token
-func (s *TokenService) GenerateAccessToken(userID primitive.ObjectID, email string) (string, error) {
+func (s *TokenService) GenerateAccessToken(userID bson.ObjectID, email string) (string, error) {
 	// Create claims with user ID and email
 	claims := models.AccessTokenClaims{
 		UserID: userID,
@@ -43,7 +43,7 @@ func (s *TokenService) GenerateAccessToken(userID primitive.ObjectID, email stri
 }
 
 // II gnerate refresh token
-func (s *TokenService) GenerateRefreshToken(userID primitive.ObjectID) (string, error) {
+func (s *TokenService) GenerateRefreshToken(userID bson.ObjectID) (string, error) {
 	claims := models.RefreshTokenClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -61,7 +61,7 @@ func (s *TokenService) GenerateRefreshToken(userID primitive.ObjectID) (string, 
 }
 
 // III generate both tokens and return them as a struct
-func (s *TokenService) GenerateTokens(userID primitive.ObjectID, email string) (*models.TokenResponse, error) {
+func (s *TokenService) GenerateTokens(userID bson.ObjectID, email string) (*models.TokenResponse, error) {
 	accessToken, err := s.GenerateAccessToken(userID, email)
 	if err != nil {
 		return nil, err

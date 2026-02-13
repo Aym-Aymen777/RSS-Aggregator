@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Aym-Aymen777/RSS-Aggregator/config"
 	"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
+	"github.com/Aym-Aymen777/RSS-Aggregator/services"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -25,6 +27,9 @@ func main() {
 
 	// Initialize MongoDB (single shared client)
 	connectDB()
+
+	jwtConfig := config.NewJWTConfig()
+	tokenService := services.NewTokenService(jwtConfig)
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
@@ -46,10 +51,11 @@ func main() {
 	v1.Get("/users", handlerFindUserByEmail)
 	v1.Put("/users/update", handlerUpdateUser)
 
-	//Auth endpoints
+	 // Public routes (no authentication required)
 	authCollection := MongoClient.Database("rssagg").Collection("auths")
 	v1.Post("/auth/register", handlers.HandlerRagisterUser(authCollection))
-	v1.Post("/auth/login", handlers.HandlerLoginUser(authCollection))
+	v1.Post("/auth/login", handlers.HandlerLoginUser(authCollection, tokenService))
+	v1.Post("/auth/refresh", handlers.HandlerRefreshToken(authCollection, tokenService))
 
 	router.Mount("/v1", v1)
 
