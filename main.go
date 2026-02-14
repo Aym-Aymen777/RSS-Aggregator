@@ -11,7 +11,9 @@ import (
 
 	"github.com/Aym-Aymen777/RSS-Aggregator/config"
 	"github.com/Aym-Aymen777/RSS-Aggregator/handlers"
+	"github.com/Aym-Aymen777/RSS-Aggregator/middleware"
 	"github.com/Aym-Aymen777/RSS-Aggregator/services"
+	"github.com/Aym-Aymen777/RSS-Aggregator/utils"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
@@ -51,12 +53,33 @@ func main() {
 	v1.Get("/users", handlerFindUserByEmail)
 	v1.Put("/users/update", handlerUpdateUser)
 
-	 // Public routes (no authentication required)
+	// Public routes (no authentication required)
 	authCollection := MongoClient.Database("rssagg").Collection("auths")
 	v1.Post("/auth/register", handlers.HandlerRagisterUser(authCollection))
 	v1.Post("/auth/login", handlers.HandlerLoginUser(authCollection, tokenService))
 	v1.Post("/auth/refresh", handlers.HandlerRefreshToken(authCollection, tokenService))
+	// Protected routes (authentication required)
+	postsCollection := MongoClient.Database("rssagg").Collection("posts")
+	v1.Group(func(r chi.Router) {
+		r.Use(middleware.AuthMidlleware(tokenService))
+		r.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("This is a protected route"))
+		})
+		r.Get("/user/profile", func(w http.ResponseWriter, r *http.Request) {
+			user, ok := middleware.GetUserFromContext(r.Context())
+			if !ok {
+				utils.RespondWithError(w, http.StatusUnauthorized, "User not found in context")
+				return
+			}
+			utils.RespondWithJSON(w, http.StatusOK, user)
+		})
+		r.Post("/posts/create", handlers.HandlerCreatePost(postsCollection))
+		r.Get("/posts", handlers.HandlerGetPosts(postsCollection))
+		r.Get("/posts/{id}", handlers.HandlerGetPostByID(postsCollection))
+		r.Put("/posts/{id}", handlers.HandlerUpdatePost(postsCollection))
+		r.Delete("/posts/{id}", handlers.HandlerDeletePost(postsCollection))
 
+	})
 	router.Mount("/v1", v1)
 
 	server := &http.Server{

@@ -87,7 +87,7 @@ func HandlerLoginUser(coll *mongo.Collection, tokenService *services.TokenServic
 		http.SetCookie(w, &http.Cookie{
 			Name:     "access_token",
 			Value:    tokens.AccessToken,
-			Path:     "/", 
+			Path:     "/",
 			MaxAge:   15 * 60,                 // 15 minutes in seconds
 			HttpOnly: true,                    // Prevents JavaScript access (XSS protection)
 			Secure:   false,                   //TODO Only sent over HTTPS (set to false in development)
@@ -98,7 +98,7 @@ func HandlerLoginUser(coll *mongo.Collection, tokenService *services.TokenServic
 		http.SetCookie(w, &http.Cookie{
 			Name:     "refresh_token",
 			Value:    tokens.RefreshToken,
-			Path:     "/", // Only sent to refresh endpoint
+			Path:     "/",              // Only sent to refresh endpoint
 			MaxAge:   7 * 24 * 60 * 60, // 7 days in seconds
 			HttpOnly: true,
 			Secure:   false, //TODO Set to false in development
@@ -108,7 +108,6 @@ func HandlerLoginUser(coll *mongo.Collection, tokenService *services.TokenServic
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Login successful",
 			"user":    user.Username,
-			"tokens":  tokens,
 		})
 	}
 }
@@ -141,6 +140,13 @@ func HandlerRefreshToken(coll *mongo.Collection, tokenService *services.TokenSer
 			http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
 			return
 		}
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: true,
+		})
 		// Set new access token cookie
 		http.SetCookie(w, &http.Cookie{
 			Name:  "access_token",
@@ -158,7 +164,7 @@ func HandlerRefreshToken(coll *mongo.Collection, tokenService *services.TokenSer
 			Name:  "refresh_token",
 			Value: tokens.RefreshToken,
 
-			Path:     "/v1/auth/refresh",    // Only sent to refresh endpoint
+			Path:     "/",
 			MaxAge:   7 * 24 * 60 * 60, // 7 days in seconds
 			HttpOnly: true,
 			Secure:   false, //TODO Set to false in development
@@ -166,7 +172,6 @@ func HandlerRefreshToken(coll *mongo.Collection, tokenService *services.TokenSer
 		})
 		utils.RespondWithJSON(w, http.StatusOK, map[string]any{
 			"message": "Token refreshed successfully",
-			"tokens":  tokens,
 		})
 	}
 }
